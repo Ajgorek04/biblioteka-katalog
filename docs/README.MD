@@ -8,8 +8,6 @@ Projekt katalogu tematycznego biblioteki stworzony w języku **C++**. Aplikacja 
 - [Technologie](#technologie)
 - [Instalacja](#instalacja)
 - [Użycie](#użycie)
-- [Struktura Plików](#struktura-plików)
-- [Licencja](#licencja)
 
 ---
 
@@ -28,7 +26,7 @@ Projekt został stworzony w **C++**, używając standardu **C++17**.
 
 ---
 
-## 📥 Instalacja
+## Instalacja
 
 ### Wymagania:
 
