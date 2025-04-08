@@ -100,7 +100,7 @@ Projekt został stworzony w **C++**, używając standardu **C++17**.
 
 ---
 
-## Użycie ⚙️
+## Użycie
 
 Po uruchomieniu programu użytkownik może:
 
