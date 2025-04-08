@@ -11,13 +11,13 @@ Projekt katalogu tematycznego biblioteki stworzony w języku **C++**. Aplikacja 
 
 ---
 
-## 💡 Opis Projektu
+## Opis Projektu
 
 Aplikacja pozwala na tworzenie i przeglądanie katalogu książek, które są przypisane do różnych kategorii tematycznych. Użytkownicy mogą dodawać książki, przypisywać je do głównych kategorii, a także do podkategorii, zarządzać danymi książek oraz wyszukiwać je według różnych kryteriów.
 
 ---
 
-## ⚙️ Technologie
+## Technologie
 
 Projekt został stworzony w **C++**, używając standardu **C++17**.
 
@@ -100,7 +100,7 @@ Projekt został stworzony w **C++**, używając standardu **C++17**.
 
 ---
 
-## ⚙️ Użycie
+## Użycie ⚙️
 
 Po uruchomieniu programu użytkownik może:
 
