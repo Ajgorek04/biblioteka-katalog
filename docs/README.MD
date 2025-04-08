@@ -1,38 +1,137 @@
-# Katalog tematyczny biblioteki
+# 📚 Katalog Tematyczny Biblioteki
 
-Projekt katalogu tematycznego biblioteki stworzony w języku C++. Celem projektu jest stworzenie aplikacji, która umożliwia dodawanie książek do biblioteki, klasyfikowanie ich według kategorii i podkategorii, a także umożliwia przeglądanie i edytowanie tych książek.
+Projekt katalogu tematycznego biblioteki stworzony w języku **C++**. Aplikacja umożliwia zarządzanie książkami w bibliotece, klasyfikowanie ich w kategorie oraz podkategorie, dodawanie tytułów i autorów oraz umożliwia przeglądanie i edytowanie tych książek.
 
-## Spis treści
+## 📑 Spis Treści
 
-- [Opis projektu](#opis-projektu)
+- [Opis Projektu](#opis-projektu)
 - [Technologie](#technologie)
 - [Instalacja](#instalacja)
 - [Użycie](#użycie)
-- [Struktura plików](#struktura-plików)
+- [Struktura Plików](#struktura-plików)
 - [Licencja](#licencja)
 
-## Opis projektu
+---
 
-Aplikacja umożliwia tworzenie, przeglądanie i zarządzanie książkami w bibliotece, z możliwością przypisania każdej książce odpowiednich kategorii oraz podkategorii. Można dodawać tytuły, autorów, lata wydania oraz inne dane, które są później wyświetlane w formie katalogu.
+## 💡 Opis Projektu
 
-## Technologie
+Aplikacja pozwala na tworzenie i przeglądanie katalogu książek, które są przypisane do różnych kategorii tematycznych. Użytkownicy mogą dodawać książki, przypisywać je do głównych kategorii, a także do podkategorii, zarządzać danymi książek oraz wyszukiwać je według różnych kryteriów.
 
-Projekt jest napisany w **C++** i wykorzystuje standard C++17.
+---
+
+## ⚙️ Technologie
+
+Projekt został stworzony w **C++**, używając standardu **C++17**.
 
 - **C++** - język programowania
-- **Standard C++17** - dla pełnej funkcjonalności i nowoczesnych rozwiązań w kodzie.
+- **Standard C++17** - nowoczesne funkcje C++
 
-## Instalacja
+---
+
+## 📥 Instalacja
 
 ### Wymagania:
 
-- Kompilator C++ (np. **g++** z MinGW lub kompilator z Visual Studio).
-- (Opcjonalnie) CMake, jeśli chcesz używać narzędzi automatyzujących kompilację.
+- **Kompilator C++** (np. **g++**).
+- **Git** do sklonowania repozytorium.
 
-### Kroki instalacyjne:
+### 🛠 Kroki Instalacyjne:
 
-1. **Sklonuj repozytorium:**
-   ```bash
-   git clone https://github.com/twoje_imie/biblioteka-katalog.git
-   cd biblioteka-katalog
-   ```
+1.  **Zainstaluj g++ (kompilator C++):**
+
+    **Na Windowsie:**
+
+    - Zainstaluj **MinGW** (zawiera g++) lub użyj **MSYS2**.
+
+    **Na Linuxie i macOS:**
+
+    - **Dla Ubuntu**:
+      ```bash
+      sudo apt install g++
+      ```
+    - **Dla macOS**:
+      ```bash
+      brew install gcc
+      ```
+
+2.  **Sklonuj repozytorium:**
+    Jeśli masz zainstalowanego **Git**, sklonuj repozytorium na swoim komputerze:
+
+    ```bash
+    git clone https://github.com/twoje_imie/biblioteka-katalog.git
+    ```
+
+3.  **Wejdź do katalogu z projektem:**
+    Po sklonowaniu repozytorium, przejdź do katalogu projektu:
+
+    ```bash
+    cd biblioteka-katalog
+    ```
+
+4.  **Zbuduj projekt:**
+    W katalogu `src`, uruchom poniższe polecenie, aby skompilować plik wykonywalny:
+
+    **Na Windowsie:**
+
+    ```bash
+    g++ src/*.cpp -Iinclude -o katalog
+    ./katalog
+    ```
+
+    **Na Linuxie/macOS:**
+
+    ```bash
+    g++ src/*.cpp -Iinclude -o katalog
+    ./katalog
+    ```
+
+5.  **Uruchom program:**  
+    Po skompilowaniu programu, uruchom go za pomocą odpowiedniego polecenia:
+
+    **Na Windowsie:**
+
+    ```bash
+    .\katalog.exe
+    ```
+
+    **Na Linuxie/macOS:**
+
+    ```bash
+    ./katalog
+    ```
+
+---
+
+## ⚙️ Użycie
+
+Po uruchomieniu programu użytkownik może:
+
+- Dodać książki do katalogu.
+- Przypisać książki do głównych kategorii (np. Literatura, Historia, Nauka).
+- Przypisać książki do podkategorii.
+- Przeglądać książki w wybranej kategorii lub podkategorii.
+- Edytować dane książek (np. zmiana tytułu, autora, roku wydania).
+
+---
+
+## 🗂 Struktura Plików
+
+/biblioteka-katalog/
+│
+├── docs/ # Dokumentacja projektu
+│ └── README.md # Główna dokumentacja projektu
+│
+├── include/ # Pliki nagłówkowe (deklaracje klas)
+│ ├── Book.hpp # Klasa Book (dekl.)
+│ └── Category.hpp # Klasa Category (dekl.)
+│
+├── src/ # Źródła (implementacja klas + main)
+│ ├── Book.cpp # Implementacja klasy Book
+│ ├── Category.cpp # Implementacja klasy Category
+│ └── main.cpp # Główny plik z logiką programu (menu)
+│
+├── data/ # (opcjonalnie) pliki z zapisanym katalogiem
+│ └── katalog.txt # Przykładowy plik z zapisanym katalogiem (tekstowy)
+│
+├── Makefile # Plik do kompilacji projektu
+└── .gitignore # Plik ignorujący niepotrzebne pliki
