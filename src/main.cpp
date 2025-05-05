@@ -133,6 +133,71 @@ void listCategories(Category* head) {
     }
 }
 
+void addBookToSubcategory(Category* head) {
+    if (!head) {
+        cout << "Brak kategorii.\n";
+        return;
+    }
+
+    // Wybierz kategorię
+    listCategories(head);
+    cout << "Wybierz kategorię (numer): ";
+    int catIndex;
+    cin >> catIndex;
+
+    Category* selectedCategory = getCategoryByIndex(head, catIndex);
+    if (!selectedCategory) {
+        cout << "Nieprawidłowa kategoria.\n";
+        return;
+    }
+
+    // Wybierz podkategorię
+    Subcategory* sub = selectedCategory->subcategoriesHead;
+    if (!sub) {
+        cout << "Ta kategoria nie ma żadnych podkategorii.\n";
+        return;
+    }
+
+    cout << "\nPodkategorie w kategorii \"" << selectedCategory->name << "\":\n";
+    int i = 1;
+    Subcategory* subIter = sub;
+    while (subIter) {
+        cout << i++ << ". " << subIter->name << "\n";
+        subIter = subIter->next;
+    }
+
+    cout << "Wybierz podkategorię (numer): ";
+    int subIndex;
+    cin >> subIndex;
+
+    subIter = sub;
+    for (int j = 1; j < subIndex && subIter; j++) {
+        subIter = subIter->next;
+    }
+
+    if (!subIter) {
+        cout << "Nieprawidłowa podkategoria.\n";
+        return;
+    }
+
+    // Wprowadź dane książki
+    string title, author;
+    int year;
+
+    cout << "Tytuł: ";
+    getline(cin >> ws, title);
+    cout << "Autor: ";
+    getline(cin >> ws, author);
+    cout << "Rok wydania: ";
+    cin >> year;
+
+    // Dodaj do listy książek
+    Book* newBook = new Book{title, author, year, nullptr};
+    newBook->next = subIter->booksHead;
+    subIter->booksHead = newBook;
+
+    cout << "Dodano książkę do podkategorii \"" << subIter->name << "\".\n";
+}
 
 void deleteCategory(Category*& head) {
     int total = countCategories(head);
@@ -209,6 +274,7 @@ void showMenu() {
     cout << "2. Wyświetl kategorie i podkategorie\n";
     cout << "3. Usuń kategorię\n";
     cout << "4. Dodaj podkategorię\n";
+    cout << "5. Dodaj książkę do podkategorii\n";
     cout << "0. Wyjście\n";
     cout << "Wybierz opcję: ";
 }
@@ -235,6 +301,9 @@ int main() {
                 break;
             case 4:
                 addSubcategory(categoryList);
+                break;
+            case 5:
+                addBookToSubcategory(categoryList);
                 break;
             case 0:
                 cout << "Zamykanie programu...\n";
