@@ -1,10 +1,28 @@
 [CATEGORY] Polskie
   [CATEGORY] Powiesci
     [BOOK] Lalka | BoleslawPrus | 1890
+    [BOOK] Ferdydurke | WitoldGombrowicz | 1937
     [CATEGORY] Historyczne
       [BOOK] Krzyzacy | HenrykSienkiewicz | 1900
-[CATEGORY] Filozoficzne
-  [CATEGORY] Maruda
-    [CATEGORY] Masurka
-      [BOOK] Mar | Malos | 2001
-      [CATEGORY] Costamnowa
+      [CATEGORY] Pomos
+        [BOOK] Potop | HenrykSienkiewicz | 1886
+[CATEGORY] Niemieckie
+  [CATEGORY] Powiesci
+    [BOOK] DerVorleser | BernhardSchlink | 1995
+    [CATEGORY] Kryminalne
+      [BOOK] Tatort | FriedrichAni | 2004
+[CATEGORY] Angielskie
+  [CATEGORY] Fantastyka
+    [BOOK] HarryPotteriKamieńFilozoficzny | J.K.Rowling | 1997
+    [BOOK] WładcaPierścieni | J.R.R.Tolkien | 1954
+  [CATEGORY] Literatura klasyczna
+    [BOOK] Dumaiuprzedzenie | JaneAusten | 1813
+    [BOOK] Wielkienadzieje | CharlesDickens | 1861
+[CATEGORY] Francuskie
+  [CATEGORY] Romans
+    [BOOK] Dumaiuprzedzenie | JaneAusten | 1813
+    [BOOK] MadameBovary | GustaveFlaubert | 1856
+[CATEGORY] Japonskie
+  [CATEGORY] Manga
+    [BOOK] Naruto | MasashiKishimoto | 1999
+    [BOOK] OnePiece | EiichiroOda | 1997

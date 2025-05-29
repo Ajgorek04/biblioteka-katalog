@@ -145,6 +145,9 @@ Category* selectCategoryFromTree(vector<Category>& categories) {
     return flatList[index - 1].second;
 }
 
+void editMenu(vector<Category> &categories);
+void deleteMenu(vector<Category> &categories);
+
 void menu(vector<Category> &categories) {
     while (true) {
         cout << "\nMENU:\n";
@@ -153,6 +156,8 @@ void menu(vector<Category> &categories) {
         cout << "3. Dodaj podkategorie\n";
         cout << "4. Dodaj ksiazke\n";
         cout << "5. Zapisz i wyjdz\n";
+        cout << "6. Edytuj katalog\n";
+        cout << "7. Usun z katalogu\n";
         cout << "Wybor: ";
         string choice;
         getline(cin, choice);
@@ -165,23 +170,141 @@ void menu(vector<Category> &categories) {
             categories.push_back(cat);
         } else if (choice == "3") {
             Category* cat = selectCategoryFromTree(categories);
-            if (cat) {
-                addSubcategory(*cat);
-            }
+            if (cat) addSubcategory(*cat);
         } else if (choice == "4") {
             Category* cat = selectCategoryFromTree(categories);
-            if (cat) {
-                addBookToCategory(*cat);
-            }
+            if (cat) addBookToCategory(*cat);
         } else if (choice == "5") {
             saveToFile(categories);
-            cout << "Zapisano katalog do pliku. Do zobaczenia!\n";
+            cout << "Zapisano katalog. Do zobaczenia!\n";
             break;
+        } else if (choice == "6") {
+            editMenu(categories);
+        } else if (choice == "7") {
+            deleteMenu(categories);
         } else {
             cout << "Nieznana opcja.\n";
         }
     }
 }
+
+void editCategory(Category &cat) {
+    cout << "Aktualna nazwa: " << cat.name << endl;
+    cout << "Nowa nazwa: ";
+    string newName;
+    getline(cin, newName);
+    if (!newName.empty()) {
+        cat.name = newName;
+    }
+}
+
+void editBook(Book &book) {
+    cout << "Edytujesz ksiazke: " << book.title << " by " << book.author << " (ISBN: " << book.isbn << ")\n";
+    cout << "Nowy tytul (lub ENTER, aby nie zmieniac): ";
+    string t;
+    getline(cin, t);
+    if (!t.empty()) book.title = t;
+
+    cout << "Nowy autor (lub ENTER): ";
+    getline(cin, t);
+    if (!t.empty()) book.author = t;
+
+    cout << "Nowy ISBN (lub ENTER): ";
+    getline(cin, t);
+    if (!t.empty()) book.isbn = t;
+}
+
+void editMenu(vector<Category> &categories) {
+    Category* cat = selectCategoryFromTree(categories);
+    if (!cat) return;
+
+    cout << "1. Edytuj nazwe kategorii\n";
+    cout << "2. Edytuj ksiazke\n";
+    cout << "Wybor: ";
+    string choice;
+    getline(cin, choice);
+
+    if (choice == "1") {
+        editCategory(*cat);
+    } else if (choice == "2") {
+        if (cat->books.empty()) {
+            cout << "Brak ksiazek w tej kategorii.\n";
+            return;
+        }
+
+        for (size_t i = 0; i < cat->books.size(); ++i) {
+            cout << i + 1 << ". " << cat->books[i].title << " by " << cat->books[i].author << " (ISBN: " << cat->books[i].isbn << ")\n";
+        }
+
+        cout << "Wybierz numer ksiazki do edycji: ";
+        string input;
+        getline(cin, input);
+        int idx = stoi(input);
+
+        if (idx < 1 || idx > (int)cat->books.size()) {
+            cout << "Nieprawidlowy wybor.\n";
+            return;
+        }
+
+        editBook(cat->books[idx - 1]);
+    }
+}
+
+void deleteMenu(vector<Category> &categories) {
+    cout << "1. Usun cala kategorie/podkategorie\n";
+    cout << "2. Usun ksiazke z kategorii\n";
+    cout << "Wybor: ";
+    string choice;
+    getline(cin, choice);
+
+    if (choice == "1") {
+        Category* target = selectCategoryFromTree(categories);
+        if (!target) return;
+
+        function<bool(vector<Category>&)> removeCategory = [&](vector<Category>& cats) -> bool {
+            for (auto it = cats.begin(); it != cats.end(); ++it) {
+                if (&(*it) == target) {
+                    cats.erase(it);
+                    return true;
+                } else if (removeCategory(it->subcategories)) {
+                    return true;
+                }
+            }
+            return false;
+        };
+
+        if (removeCategory(categories)) {
+            cout << "Kategoria usunieta.\n";
+        } else {
+            cout << "Nie udalo sie usunac.\n";
+        }
+
+    } else if (choice == "2") {
+        Category* cat = selectCategoryFromTree(categories);
+        if (!cat || cat->books.empty()) {
+            cout << "Brak ksiazek.\n";
+            return;
+        }
+
+        for (size_t i = 0; i < cat->books.size(); ++i) {
+            cout << i + 1 << ". " << cat->books[i].title << " by " << cat->books[i].author << " (ISBN: " << cat->books[i].isbn << ")\n";
+        }
+
+        cout << "Wybierz numer ksiazki do usuniecia: ";
+        string input;
+        getline(cin, input);
+        int idx = stoi(input);
+
+        if (idx < 1 || idx > (int)cat->books.size()) {
+            cout << "Nieprawidlowy wybor.\n";
+            return;
+        }
+
+        cat->books.erase(cat->books.begin() + idx - 1);
+        cout << "Ksiazka usunieta.\n";
+    }
+}
+
 
 int main() {
     vector<Category> categories;
