@@ -56,7 +56,7 @@ Projekt został stworzony w **C++**, używając standardu **C++17**.
     Jeśli masz zainstalowanego **Git**, sklonuj repozytorium na swoim komputerze:
 
     ```bash
-    git clone https://github.com/twoje_imie/biblioteka-katalog.git
+    git clone https://github.com/Ajgorek04/biblioteka-katalog.git
     ```
 
 3.  **Wejdź do katalogu z projektem:**
@@ -72,15 +72,15 @@ Projekt został stworzony w **C++**, używając standardu **C++17**.
     **Na Windowsie:**
 
     ```bash
-    g++ src/*.cpp -Iinclude -o katalog
-    ./katalog
+    g++ main.exe -o main
+    ./main
     ```
 
     **Na Linuxie/macOS:**
 
     ```bash
-    g++ src/*.cpp -Iinclude -o katalog
-    ./katalog
+    g++ main.exe -o main
+    ./main
     ```
 
 5.  **Uruchom program:**  
@@ -89,13 +89,13 @@ Projekt został stworzony w **C++**, używając standardu **C++17**.
     **Na Windowsie:**
 
     ```bash
-    .\katalog.exe
+    .\main.exe
     ```
 
     **Na Linuxie/macOS:**
 
     ```bash
-    ./katalog
+    ./main
     ```
 
 ---

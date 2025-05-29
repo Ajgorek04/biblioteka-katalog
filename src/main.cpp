@@ -78,7 +78,7 @@ Subcategory* chooseSubcategory(vector<Subcategory*>& subs) {
         }
         int idx = getNumberInput("Wybierz podkategorie (0 - cofnij): ");
         if (idx == 0) return nullptr;
-        if (idx > 0 && idx <= subs.size()) {
+        if (idx > 0 && idx <= (int)subs.size()) {
             Subcategory* chosen = subs[idx - 1];
             if (chosen->subcategories.empty()) return chosen;
             int opt = getNumberInput("1. Dodaj tutaj\n2. Wejdz dalej\nWybierz: ");
@@ -110,7 +110,7 @@ void addSubcategoryToCategory() {
         cout << i + 1 << ". " << categories[i].name << "\n";
     }
     int index = getNumberInput("Wybierz kategorie (numer): ");
-    if (index < 1 || index > categories.size()) {
+    if (index < 1 || index > (int)categories.size()) {
         cout << "Nieprawidlowy wybor.\n";
         return;
     }
@@ -152,7 +152,7 @@ void addBookToSubcategory() {
         cout << i + 1 << ". " << categories[i].name << "\n";
     }
     int index = getNumberInput("Wybierz kategorie (numer): ");
-    if (index < 1 || index > categories.size()) {
+    if (index < 1 || index > (int)categories.size()) {
         cout << "Nieprawidlowy wybor.\n";
         return;
     }
@@ -219,7 +219,7 @@ void loadFromFile(const string& filename) {
         string type = line.substr(pos - 3, 3);
         string content = line.substr(pos + 1);
         int depth = 0;
-        while (line[depth] == '-') ++depth;
+        while (depth < (int)line.size() && line[depth] == '-') ++depth;
 
         if (line.substr(0, 4) == "CAT:") {
             categories.push_back({content});
@@ -228,11 +228,11 @@ void loadFromFile(const string& filename) {
             Subcategory* sub = new Subcategory{content};
             if (depth == 1) {
                 categories.back().subcategories.push_back(sub);
-            } else if (depth > 1 && stack.size() >= depth - 1) {
+            } else if (depth > 1 && (int)stack.size() >= depth - 1) {
                 stack[depth - 2]->subcategories.push_back(sub);
             }
-            if (stack.size() >= depth) stack.resize(depth);
-            if (stack.size() < depth) stack.push_back(sub);
+            if ((int)stack.size() >= depth) stack.resize(depth);
+            if ((int)stack.size() < depth) stack.push_back(sub);
             else stack[depth - 1] = sub;
         } else if (type == "OOK") {
             istringstream ss(content);
@@ -241,13 +241,204 @@ void loadFromFile(const string& filename) {
             getline(ss, author, '|');
             getline(ss, yearStr);
             Book book{title, author, stoi(yearStr)};
-            if (!stack.empty() && stack.size() >= depth - 1) {
+            if (!stack.empty() && (int)stack.size() >= depth - 1) {
                 stack[depth - 2]->books.push_back(book);
             }
         }
     }
 
     in.close();
+}
+
+void editMenu() {
+    cout << "=== EDYCJA ===\n";
+    cout << "1. Edytuj kategorie\n";
+    cout << "2. Edytuj podkategorie\n";
+    cout << "3. Edytuj ksiazke\n";
+    int opt = getNumberInput("Wybierz: ");
+    clearInput();
+
+    if (opt == 1) {
+        if (categories.empty()) {
+            cout << "Brak kategorii do edycji.\n";
+            return;
+        }
+        for (size_t i = 0; i < categories.size(); ++i)
+            cout << i + 1 << ". " << categories[i].name << "\n";
+        int idx = getNumberInput("Wybierz kategorie: ");
+        clearInput();
+        if (idx >= 1 && idx <= (int)categories.size()) {
+            cout << "Nowa nazwa: ";
+            string newName;
+            getline(cin, newName);
+            categories[idx - 1].name = newName;
+            cout << "Zmieniono nazwe kategorii.\n";
+        }
+    } else if (opt == 2) {
+        if (categories.empty()) {
+            cout << "Brak kategorii.\n";
+            return;
+        }
+        for (size_t i = 0; i < categories.size(); ++i)
+            cout << i + 1 << ". " << categories[i].name << "\n";
+        int catIdx = getNumberInput("Wybierz kategorie: ");
+        clearInput();
+        if (catIdx < 1 || catIdx > (int)categories.size()) return;
+
+        Subcategory* sub = chooseSubcategory(categories[catIdx - 1].subcategories);
+        if (!sub) {
+            cout << "Nie wybrano podkategorii.\n";
+            return;
+        }
+        cout << "Nowa nazwa podkategorii: ";
+        string newName;
+        getline(cin, newName);
+        sub->name = newName;
+        cout << "Zmieniono nazwe podkategorii.\n";
+    } else if (opt == 3) {
+        if (categories.empty()) {
+            cout << "Brak kategorii.\n";
+            return;
+        }
+        for (size_t i = 0; i < categories.size(); ++i)
+            cout << i + 1 << ". " << categories[i].name << "\n";
+        int catIdx = getNumberInput("Wybierz kategorie: ");
+        clearInput();
+        if (catIdx < 1 || catIdx > (int)categories.size()) return;
+
+        Subcategory* sub = chooseSubcategory(categories[catIdx - 1].subcategories);
+        if (!sub || sub->books.empty()) {
+            cout << "Brak ksiazek w wybranej podkategorii.\n";
+            return;
+        }
+
+        for (size_t i = 0; i < sub->books.size(); ++i)
+            cout << i + 1 << ". " << sub->books[i].title << "\n";
+        int bIdx = getNumberInput("Wybierz ksiazke: ");
+        clearInput();
+        if (bIdx < 1 || bIdx > (int)sub->books.size()) return;
+
+        Book& b = sub->books[bIdx - 1];
+        cout << "Nowy tytul: "; getline(cin, b.title);
+        cout << "Nowy autor: "; getline(cin, b.author);
+        b.year = getNumberInput("Nowy rok: ");
+        cout << "Zmieniono dane ksiazki.\n";
+    } else {
+        cout << "Nieznana opcja.\n";
+    }
+}
+
+void deleteMenu() {
+    cout << "=== USUWANIE ===\n";
+    cout << "1. Usun kategorie\n";
+    cout << "2. Usun podkategorie\n";
+    cout << "3. Usun ksiazke\n";
+    int opt = getNumberInput("Wybierz: ");
+    clearInput();
+
+    if (opt == 1) {
+        if (categories.empty()) {
+            cout << "Brak kategorii do usuniecia.\n";
+            return;
+        }
+        for (size_t i = 0; i < categories.size(); ++i)
+            cout << i + 1 << ". " << categories[i].name << "\n";
+        int idx = getNumberInput("Wybierz do usuniecia: ");
+        clearInput();
+        if (idx >= 1 && idx <= (int)categories.size()) {
+            // Zwolnij pamięć podkategorii
+            auto deleteSubcategories = [](vector<Subcategory*>& subs) {
+                for (auto* sub : subs) {
+                    deleteSubcategories(sub->subcategories);
+                    delete sub;
+                }
+                subs.clear();
+            };
+            deleteSubcategories(categories[idx - 1].subcategories);
+
+            categories.erase(categories.begin() + (idx - 1));
+            cout << "Usunieto kategorie.\n";
+        }
+    } else if (opt == 2) {
+        if (categories.empty()) {
+            cout << "Brak kategorii.\n";
+            return;
+        }
+        for (size_t i = 0; i < categories.size(); ++i)
+            cout << i + 1 << ". " << categories[i].name << "\n";
+        int catIdx = getNumberInput("Wybierz kategorie: ");
+        clearInput();
+        if (catIdx < 1 || catIdx > (int)categories.size()) return;
+
+        vector<Subcategory*>* current = &categories[catIdx - 1].subcategories;
+        vector<Subcategory*>* parent = nullptr;
+
+        while (true) {
+            if (current->empty()) {
+                cout << "Brak podkategorii do usuniecia.\n";
+                return;
+            }
+            for (size_t i = 0; i < current->size(); ++i)
+                cout << i + 1 << ". " << (*current)[i]->name << "\n";
+            cout << "0. Cofnij\n";
+            int sIdx = getNumberInput("Wybierz podkategorie do usuniecia (0 - cofnij): ");
+            clearInput();
+            if (sIdx == 0) return;
+            if (sIdx >= 1 && sIdx <= (int)current->size()) {
+                cout << "1. Usun\n2. Wejdz glebiej\nWybierz: ";
+                int act;
+                cin >> act;
+                clearInput();
+                if (act == 1) {
+                    // usuń rekurencyjnie podkategorie
+                    auto deleteSubcategories = [](vector<Subcategory*>& subs) {
+                        for (auto* sub : subs) {
+                            deleteSubcategories(sub->subcategories);
+                            delete sub;
+                        }
+                        subs.clear();
+                    };
+                    deleteSubcategories((*current)[sIdx - 1]->subcategories);
+                    delete (*current)[sIdx - 1];
+                    current->erase(current->begin() + (sIdx - 1));
+                    cout << "Usunieto podkategorie.\n";
+                    return;
+                } else if (act == 2) {
+                    parent = current;
+                    current = &(*current)[sIdx - 1]->subcategories;
+                }
+            } else {
+                cout << "Nieprawidlowy wybor.\n";
+            }
+        }
+    } else if (opt == 3) {
+        if (categories.empty()) {
+            cout << "Brak kategorii.\n";
+            return;
+        }
+        for (size_t i = 0; i < categories.size(); ++i)
+            cout << i + 1 << ". " << categories[i].name << "\n";
+        int catIdx = getNumberInput("Wybierz kategorie: ");
+        clearInput();
+        if (catIdx < 1 || catIdx > (int)categories.size()) return;
+
+        Subcategory* sub = chooseSubcategory(categories[catIdx - 1].subcategories);
+        if (!sub || sub->books.empty()) {
+            cout << "Brak ksiazek w wybranej podkategorii.\n";
+            return;
+        }
+
+        for (size_t i = 0; i < sub->books.size(); ++i)
+            cout << i + 1 << ". " << sub->books[i].title << "\n";
+        int bIdx = getNumberInput("Wybierz ksiazke do usuniecia: ");
+        clearInput();
+        if (bIdx >= 1 && bIdx <= (int)sub->books.size()) {
+            sub->books.erase(sub->books.begin() + (bIdx - 1));
+            cout << "Usunieto ksiazke.\n";
+        }
+    } else {
+        cout << "Nieznana opcja.\n";
+    }
 }
 
 int main() {
@@ -257,19 +448,43 @@ int main() {
         cout << "\n--- MENU ---\n";
         cout << "1. Dodaj kategorie\n";
         cout << "2. Dodaj podkategorie\n";
-        cout << "3. Dodaj ksiazke do podkategorii\n";
-        cout << "4. Wyswietl wszystko\n";
+        cout << "3. Dodaj ksiazke\n";
+        cout << "4. Wyswietl katalog\n";
+        cout << "5. Edytuj kategorie/podkategorie/ksiazki\n";
+        cout << "6. Usun kategorie/podkategorie/ksiazki\n";
+        cout << "7. Zapisz do pliku\n";
         cout << "0. Wyjscie\n";
+
         int choice = getNumberInput("Wybierz opcje: ");
+        clearInput();
+
         switch (choice) {
             case 1: addCategory(); break;
             case 2: addSubcategoryToCategory(); break;
             case 3: addBookToSubcategory(); break;
             case 4: displayAll(); break;
+            case 5: editMenu(); break;
+            case 6: deleteMenu(); break;
+            case 7: saveToFile("dane.txt"); cout << "Zapisano do pliku.\n"; break;
             case 0:
-                saveToFile("dane.txt");
+                cout << "Koniec programu.\n";
+                // Zwolnienie pamięci
+                for (auto& cat : categories) {
+                    function<void(vector<Subcategory*>&)> delSubcats = [&](vector<Subcategory*>& subs) {
+                        for (auto* s : subs) {
+                            delSubcats(s->subcategories);
+                            delete s;
+                        }
+                        subs.clear();
+                    };
+                    delSubcats(cat.subcategories);
+                }
+                categories.clear();
                 return 0;
-            default: cout << "Nieprawidlowa opcja.\n"; break;
+            default:
+                cout << "Nieznana opcja.\n";
         }
     }
+
+    return 0;
 }
