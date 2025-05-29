@@ -1,69 +1,10 @@
-CAT:Polskie
--SUB:Powiesci
---BOOK:Lalka|Boleslaw Prus|1890
---SUB:Historyczne
----BOOK:Krzyzacy|Henryk Sienkiewicz|1900
---SUB:Wspolczesne
----BOOK:Inny swiat|Gustaw Herling-Grudzinski|1951
---SUB:Obyczajowe
----BOOK:Nad Niemnem|Eliza Orzeszkowa|1888
--SUB:Poezja
---BOOK:Tren VIII|Jan Kochanowski|1580
---SUB:Romantyzm
----BOOK:Ballady i romanse|Adam Mickiewicz|1822
---SUB:Mloda Polska
----BOOK:Zaczarowana dorożka|Konstanty Ildefons Galczynski|1948
--SUB:Dziecieca
---BOOK:Akademia pana Kleksa|Jan Brzechwa|1946
---SUB:Bajki
----BOOK:Lokomotywa|Julian Tuwim|1938
---SUB:Fantastyka
----BOOK:Felix Net i Nika|Rafal Kosik|2004
-CAT:Niemieckie
--SUB:Filozofia
---BOOK:Tak rzecze Zaratustra|Friedrich Nietzsche|1883
---SUB:Egzystencjalizm
----BOOK:Bycie i czas|Martin Heidegger|1927
--SUB:Poezja
---BOOK:Faust|Johann Wolfgang von Goethe|1808
---SUB:Romantyzm
----BOOK:Der Erlkönig|Johann Wolfgang von Goethe|1782
--SUB:Historyczne
---BOOK:Blaszany bebenek|Gunter Grass|1959
---SUB:Wojenne
----BOOK:Na Zachodzie bez zmian|Erich Maria Remarque|1929
-CAT:Angielskie
--SUB:Klasyka
---BOOK:Duma i uprzedzenie|Jane Austen|1813
---SUB:Gotyckie
----BOOK:Drakula|Bram Stoker|1897
----BOOK:Frankenstein|Mary Shelley|1818
---SUB:Romans
----BOOK:Perswazje|Jane Austen|1817
--SUB:Fantastyka
---BOOK:Hobbit|J.R.R. Tolkien|1937
---SUB:Nowoczesna
----BOOK:Harry Potter i Kamien Filozoficzny|J.K. Rowling|1997
----BOOK:Igrzyska smierci|Suzanne Collins|2008
-CAT:Nauka
--SUB:Fizyka
---BOOK:Krotka historia czasu|Stephen Hawking|1988
---SUB:Astrofizyka
----BOOK:Kosmos|Carl Sagan|1980
---SUB:Mechanika
----BOOK:Fizyka rzeczy niemozliwych|Michio Kaku|2008
--SUB:Psychologia
---BOOK:Inteligencja emocjonalna|Daniel Goleman|1995
---SUB:Rozwoj osobisty
----BOOK:Potega terazniejszosci|Eckhart Tolle|1997
-CAT:Reportaze
--SUB:Biografie
---BOOK:Steve Jobs|Walter Isaacson|2011
---SUB:Polityczne
----BOOK:Becoming|Michelle Obama|2018
---SUB:Naukowe
----BOOK:Elon Musk|Ashlee Vance|2015
--SUB:Reportaze polityczne
---BOOK:Cesarz|Ryszard Kapuscinski|1978
---SUB:Geopolityka
----BOOK:Nadchodzi III wojna swiatowa|Jacek Bartosiak|2020
+[CATEGORY] Polskie
+  [CATEGORY] Powiesci
+    [BOOK] Lalka | BoleslawPrus | 1890
+    [CATEGORY] Historyczne
+      [BOOK] Krzyzacy | HenrykSienkiewicz | 1900
+[CATEGORY] Filozoficzne
+  [CATEGORY] Maruda
+    [CATEGORY] Masurka
+      [BOOK] Mar | Malos | 2001
+      [CATEGORY] Costamnowa
