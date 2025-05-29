@@ -2,12 +2,20 @@
 #include <string>
 #include <vector>
 #include <limits>
+#include <fstream>
+#include <sstream>
 using namespace std;
+
+struct Book {
+    string title;
+    string author;
+    int year;
+};
 
 struct Subcategory {
     string name;
     vector<Subcategory*> subcategories;
-    vector<string> books;
+    vector<Book> books;
 };
 
 struct Category {
@@ -22,18 +30,31 @@ void clearInput() {
     cin.ignore(numeric_limits<streamsize>::max(), '\n');
 }
 
+int getNumberInput(const string& prompt) {
+    int num;
+    while (true) {
+        cout << prompt;
+        if (cin >> num) return num;
+        cout << "Nieprawidlowy numer. Sprobuj ponownie.\n";
+        clearInput();
+    }
+}
+
 void addCategory() {
-    cout << "Podaj nazwę nowej kategorii: ";
+    cout << "Podaj nazwe nowej kategorii: ";
     string name;
     clearInput();
     getline(cin, name);
     categories.push_back({name});
-    cout << "Dodano kategorię: " << name << "\n";
+    cout << "Dodano kategorie: " << name << "\n";
 }
 
 void displaySubcategories(const vector<Subcategory*>& subs, int depth = 1) {
     for (auto* sub : subs) {
         cout << string(depth * 2, ' ') << "- " << sub->name << "\n";
+        for (const auto& book : sub->books) {
+            cout << string((depth + 1) * 2, ' ') << "* " << book.title << " - " << book.author << " (" << book.year << ")\n";
+        }
         displaySubcategories(sub->subcategories, depth + 1);
     }
 }
@@ -55,32 +76,28 @@ Subcategory* chooseSubcategory(vector<Subcategory*>& subs) {
         for (size_t i = 0; i < subs.size(); ++i) {
             cout << i + 1 << ". " << subs[i]->name << "\n";
         }
-        cout << "Wybierz podkategorię (0 - cofnij): ";
-        int idx;
-        cin >> idx;
+        int idx = getNumberInput("Wybierz podkategorie (0 - cofnij): ");
         if (idx == 0) return nullptr;
         if (idx > 0 && idx <= subs.size()) {
             Subcategory* chosen = subs[idx - 1];
             if (chosen->subcategories.empty()) return chosen;
-            cout << "1. Dodaj tutaj\n2. Wejdź dalej\nWybierz: ";
-            int opt;
-            cin >> opt;
+            int opt = getNumberInput("1. Dodaj tutaj\n2. Wejdz dalej\nWybierz: ");
             if (opt == 1) return chosen;
             else if (opt == 2) subs = chosen->subcategories;
         } else {
-            cout << "Nieprawidłowy wybór.\n";
+            cout << "Nieprawidlowy wybor.\n";
         }
     }
 }
 
 void addSubcategory(vector<Subcategory*>& subs) {
-    cout << "Podaj nazwę podkategorii: ";
+    cout << "Podaj nazwe podkategorii: ";
     clearInput();
     string name;
     getline(cin, name);
     Subcategory* sub = new Subcategory{name};
     subs.push_back(sub);
-    cout << "Dodano podkategorię: " << name << "\n";
+    cout << "Dodano podkategorie: " << name << "\n";
 }
 
 void addSubcategoryToCategory() {
@@ -88,27 +105,23 @@ void addSubcategoryToCategory() {
         cout << "Brak kategorii.\n";
         return;
     }
-    cout << "Dostępne kategorie:\n";
+    cout << "Dostepne kategorie:\n";
     for (size_t i = 0; i < categories.size(); ++i) {
         cout << i + 1 << ". " << categories[i].name << "\n";
     }
-    cout << "Wybierz kategorię (numer): ";
-    int index;
-    cin >> index;
+    int index = getNumberInput("Wybierz kategorie (numer): ");
     if (index < 1 || index > categories.size()) {
-        cout << "Nieprawidłowy wybór.\n";
+        cout << "Nieprawidlowy wybor.\n";
         return;
     }
     Category& selected = categories[index - 1];
 
     while (true) {
-        cout << "\nGdzie chcesz dodać podkategorię?\n";
+        cout << "\nGdzie chcesz dodac podkategorie?\n";
         cout << "1. Do kategorii \"" << selected.name << "\"\n";
-        cout << "2. Do istniejącej podkategorii\n";
+        cout << "2. Do istniejacej podkategorii\n";
         cout << "0. Anuluj\n";
-        cout << "Wybierz opcję: ";
-        int option;
-        cin >> option;
+        int option = getNumberInput("Wybierz opcje: ");
         if (option == 0) return;
         else if (option == 1) {
             addSubcategory(selected.subcategories);
@@ -124,7 +137,7 @@ void addSubcategoryToCategory() {
                 }
             }
         } else {
-            cout << "Nieprawidłowa opcja.\n";
+            cout << "Nieprawidlowa opcja.\n";
         }
     }
 }
@@ -134,15 +147,13 @@ void addBookToSubcategory() {
         cout << "Brak kategorii.\n";
         return;
     }
-    cout << "Dostępne kategorie:\n";
+    cout << "Dostepne kategorie:\n";
     for (size_t i = 0; i < categories.size(); ++i) {
         cout << i + 1 << ". " << categories[i].name << "\n";
     }
-    cout << "Wybierz kategorię (numer): ";
-    int index;
-    cin >> index;
+    int index = getNumberInput("Wybierz kategorie (numer): ");
     if (index < 1 || index > categories.size()) {
-        cout << "Nieprawidłowy wybór.\n";
+        cout << "Nieprawidlowy wybor.\n";
         return;
     }
     Category& selected = categories[index - 1];
@@ -153,32 +164,112 @@ void addBookToSubcategory() {
     Subcategory* sub = chooseSubcategory(selected.subcategories);
     if (!sub) return;
 
-    cout << "Podaj tytuł książki: ";
     clearInput();
-    string title;
-    getline(cin, title);
-    sub->books.push_back(title);
-    cout << "Dodano książkę: " << title << "\n";
+    Book book;
+    cout << "Podaj tytul ksiazki: ";
+    getline(cin, book.title);
+    cout << "Podaj autora: ";
+    getline(cin, book.author);
+    book.year = getNumberInput("Podaj rok wydania: ");
+
+    sub->books.push_back(book);
+    cout << "Dodano ksiazke: " << book.title << " - " << book.author << " (" << book.year << ")\n";
+}
+
+void saveSub(ofstream& out, vector<Subcategory*> subs, int depth) {
+    for (auto* sub : subs) {
+        out << string(depth, '-') << "SUB:" << sub->name << "\n";
+        for (const auto& book : sub->books) {
+            out << string(depth + 1, '-') << "BOOK:" << book.title << "|" << book.author << "|" << book.year << "\n";
+        }
+        saveSub(out, sub->subcategories, depth + 1);
+    }
+}
+
+void saveToFile(const string& filename) {
+    ofstream out(filename);
+    if (!out) {
+        cout << "Blad zapisu do pliku.\n";
+        return;
+    }
+
+    for (const auto& cat : categories) {
+        out << "CAT:" << cat.name << "\n";
+        saveSub(out, cat.subcategories, 1);
+    }
+
+    out.close();
+}
+
+void loadFromFile(const string& filename) {
+    ifstream in(filename);
+    if (!in) {
+        cout << "Brak pliku do wczytania. Tworzymy pusty katalog.\n";
+        return;
+    }
+
+    categories.clear();
+    string line;
+    vector<Subcategory*> stack;
+
+    while (getline(in, line)) {
+        size_t pos = line.find(':');
+        if (pos == string::npos) continue;
+
+        string type = line.substr(pos - 3, 3);
+        string content = line.substr(pos + 1);
+        int depth = 0;
+        while (line[depth] == '-') ++depth;
+
+        if (line.substr(0, 4) == "CAT:") {
+            categories.push_back({content});
+            stack.clear();
+        } else if (type == "SUB") {
+            Subcategory* sub = new Subcategory{content};
+            if (depth == 1) {
+                categories.back().subcategories.push_back(sub);
+            } else if (depth > 1 && stack.size() >= depth - 1) {
+                stack[depth - 2]->subcategories.push_back(sub);
+            }
+            if (stack.size() >= depth) stack.resize(depth);
+            if (stack.size() < depth) stack.push_back(sub);
+            else stack[depth - 1] = sub;
+        } else if (type == "OOK") {
+            istringstream ss(content);
+            string title, author, yearStr;
+            getline(ss, title, '|');
+            getline(ss, author, '|');
+            getline(ss, yearStr);
+            Book book{title, author, stoi(yearStr)};
+            if (!stack.empty() && stack.size() >= depth - 1) {
+                stack[depth - 2]->books.push_back(book);
+            }
+        }
+    }
+
+    in.close();
 }
 
 int main() {
+    loadFromFile("dane.txt");
+
     while (true) {
         cout << "\n--- MENU ---\n";
-        cout << "1. Dodaj kategorię\n";
-        cout << "2. Dodaj podkategorię (rekurencyjnie)\n";
-        cout << "3. Dodaj książkę do podkategorii\n";
-        cout << "4. Wyświetl wszystko\n";
-        cout << "0. Wyjście\n";
-        cout << "Wybierz opcję: ";
-        int choice;
-        cin >> choice;
+        cout << "1. Dodaj kategorie\n";
+        cout << "2. Dodaj podkategorie\n";
+        cout << "3. Dodaj ksiazke do podkategorii\n";
+        cout << "4. Wyswietl wszystko\n";
+        cout << "0. Wyjscie\n";
+        int choice = getNumberInput("Wybierz opcje: ");
         switch (choice) {
             case 1: addCategory(); break;
             case 2: addSubcategoryToCategory(); break;
             case 3: addBookToSubcategory(); break;
             case 4: displayAll(); break;
-            case 0: return 0;
-            default: cout << "Nieprawidłowa opcja.\n"; break;
+            case 0:
+                saveToFile("dane.txt");
+                return 0;
+            default: cout << "Nieprawidlowa opcja.\n"; break;
         }
     }
 }
