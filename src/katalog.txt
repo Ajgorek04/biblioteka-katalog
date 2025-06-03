@@ -22,7 +22,9 @@
   [CATEGORY] Romans
     [BOOK] Dumaiuprzedzenie | JaneAusten | 1813
     [BOOK] MadameBovary | GustaveFlaubert | 1856
-[CATEGORY] Japonskie
+[CATEGORY] Japan
   [CATEGORY] Manga
     [BOOK] Naruto | MasashiKishimoto | 1999
     [BOOK] OnePiece | EiichiroOda | 1997
+[CATEGORY] Ksiazki
+  [CATEGORY] Jakies Na pewno

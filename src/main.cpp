@@ -1,11 +1,14 @@
 #include <iostream>
-#include <vector>
 #include <string>
 #include <fstream>
 #include <sstream>
 #include <algorithm>
 #include <functional>
 using namespace std;
+
+const int MAX_BOOKS = 100;
+const int MAX_SUBCATEGORIES = 20;
+const int MAX_CATEGORIES = 50;
 
 struct Book {
     string title;
@@ -15,25 +18,40 @@ struct Book {
 
 struct Category {
     string name;
-    vector<Book> books;
-    vector<Category> subcategories;
+    Book books[MAX_BOOKS];
+    int bookCount;
+
+    Category* subcategories[MAX_SUBCATEGORIES];
+    int subcategoryCount;
+
+    Category() {
+        bookCount = 0;
+        subcategoryCount = 0;
+        for (int i = 0; i < MAX_SUBCATEGORIES; ++i) {
+            subcategories[i] = nullptr;
+        }
+    }
 };
 
-void saveCategory(ofstream &file, const Category &cat, int depth = 0) {
+Category* categories[MAX_CATEGORIES];
+int categoryCount = 0;
+
+void saveCategory(ofstream &file, const Category* cat, int depth = 0) {
     string indent(depth * 2, ' ');
-    file << indent << "[CATEGORY] " << cat.name << '\n';
-    for (const auto &book : cat.books) {
+    file << indent << "[CATEGORY] " << cat->name << '\n';
+    for (int i = 0; i < cat->bookCount; ++i) {
+        const Book& book = cat->books[i];
         file << indent << "  [BOOK] " << book.title << " | " << book.author << " | " << book.isbn << '\n';
     }
-    for (const auto &sub : cat.subcategories) {
-        saveCategory(file, sub, depth + 1);
+    for (int i = 0; i < cat->subcategoryCount; ++i) {
+        saveCategory(file, cat->subcategories[i], depth + 1);
     }
 }
 
-void saveToFile(const vector<Category> &categories) {
+void saveToFile() {
     ofstream file("katalog.txt");
-    for (const auto &cat : categories) {
-        saveCategory(file, cat);
+    for (int i = 0; i < categoryCount; ++i) {
+        saveCategory(file, categories[i]);
     }
     file.close();
 }
@@ -46,90 +64,147 @@ bool parseBook(const string &line, Book &book) {
     getline(ss, book.title, '|');
     getline(ss, book.author, '|');
     getline(ss, book.isbn);
-    book.title = string(book.title.begin(), remove(book.title.begin(), book.title.end(), ' '));
-    book.author = string(book.author.begin(), remove(book.author.begin(), book.author.end(), ' '));
-    book.isbn = string(book.isbn.begin(), remove(book.isbn.begin(), book.isbn.end(), ' '));
+    // trim spaces from left and right of title, author, isbn
+    auto trim = [](string &s) {
+        s.erase(s.begin(), find_if(s.begin(), s.end(), [](unsigned char ch){ return !isspace(ch); }));
+        s.erase(find_if(s.rbegin(), s.rend(), [](unsigned char ch){ return !isspace(ch); }).base(), s.end());
+    };
+    trim(book.title);
+    trim(book.author);
+    trim(book.isbn);
     return true;
 }
 
-void loadFromFile(vector<Category> &categories) {
+// Funkcja do wczytywania z pliku - tworzymy hierarchię kategorii dynamicznie
+void loadFromFile() {
     ifstream file("katalog.txt");
+    if (!file) return;  // plik nie istnieje, startujemy z pustą listą
+
     string line;
-    vector<Category*> stack;
+    Category* stack[100];
+    int stackDepth = 0;
+
+    // Najpierw usuwamy stare kategorie, jeśli jakieś były
+    for (int i = 0; i < categoryCount; ++i) {
+        // zwalniamy pamięć dynamicznie alokowanych kategorii (wczytanych poniżej)
+        // zrobimy prostą rekurencję na zwalnianie pamięci:
+        function<void(Category*)> freeCategory = [&](Category* cat) {
+            for (int j = 0; j < cat->subcategoryCount; ++j) {
+                freeCategory(cat->subcategories[j]);
+            }
+            delete cat;
+        };
+        freeCategory(categories[i]);
+        categories[i] = nullptr;
+    }
+    categoryCount = 0;
+
     while (getline(file, line)) {
         size_t depth = 0;
-        while (line[depth] == ' ') depth++;
-        line = line.substr(depth);
-        if (line.rfind("[CATEGORY] ", 0) == 0) {
-            Category cat;
-            cat.name = line.substr(11);
-            if (depth == 0) {
-                categories.push_back(cat);
-                stack = { &categories.back() };
+        while (depth < line.size() && line[depth] == ' ') depth++;
+        string trimmed = line.substr(depth);
+
+        if (trimmed.rfind("[CATEGORY] ", 0) == 0) {
+            string catName = trimmed.substr(11);
+            Category* cat = new Category();
+            cat->name = catName;
+
+            int level = depth / 2;  // 2 spacje na poziom
+            if (level == 0) {
+                categories[categoryCount++] = cat;
+                stackDepth = 1;
+                stack[0] = cat;
             } else {
-                while (stack.size() > depth / 2) stack.pop_back();
-                stack.back()->subcategories.push_back(cat);
-                stack.push_back(&stack.back()->subcategories.back());
+                while (stackDepth > level) stackDepth--;
+                Category* parent = stack[stackDepth - 1];
+                if (parent->subcategoryCount < MAX_SUBCATEGORIES) {
+                    parent->subcategories[parent->subcategoryCount++] = cat;
+                    stack[stackDepth++] = cat;
+                } else {
+                    cout << "Za duzo podkategorii w: " << parent->name << endl;
+                    delete cat;
+                }
             }
-        } else if (line.rfind("[BOOK] ", 0) == 0) {
+        } else if (trimmed.rfind("[BOOK] ", 0) == 0) {
             Book book;
-            if (parseBook(line, book)) {
-                stack.back()->books.push_back(book);
+            if (parseBook(trimmed, book)) {
+                Category* currentCat = stack[stackDepth - 1];
+                if (currentCat->bookCount < MAX_BOOKS) {
+                    currentCat->books[currentCat->bookCount++] = book;
+                } else {
+                    cout << "Za duzo ksiazek w kategorii: " << currentCat->name << endl;
+                }
             }
         }
     }
     file.close();
 }
 
-void printCategory(const Category &cat, int depth = 0) {
+void printCategory(const Category* cat, int depth = 0) {
     string indent(depth * 2, ' ');
-    cout << indent << "- " << cat.name << endl;
-    for (const auto &book : cat.books) {
+    cout << indent << "- " << cat->name << endl;
+    for (int i = 0; i < cat->bookCount; ++i) {
+        const Book &book = cat->books[i];
         cout << indent << "  * " << book.title << " by " << book.author << " (ISBN: " << book.isbn << ")" << endl;
     }
-    for (const auto &sub : cat.subcategories) {
-        printCategory(sub, depth + 1);
+    for (int i = 0; i < cat->subcategoryCount; ++i) {
+        printCategory(cat->subcategories[i], depth + 1);
     }
 }
 
-void addBookToCategory(Category &cat) {
+void addBookToCategory(Category* cat) {
+    if (cat->bookCount >= MAX_BOOKS) {
+        cout << "Nie mozna dodac wiecej ksiazek do tej kategorii.\n";
+        return;
+    }
     Book book;
     cout << "Tytul: "; getline(cin, book.title);
     cout << "Autor: "; getline(cin, book.author);
     cout << "ISBN: "; getline(cin, book.isbn);
-    cat.books.push_back(book);
+    cat->books[cat->bookCount++] = book;
 }
 
-void addSubcategory(Category &cat) {
-    Category sub;
-    cout << "Nazwa podkategorii: "; getline(cin, sub.name);
-    cat.subcategories.push_back(sub);
+void addSubcategory(Category* cat) {
+    if (cat->subcategoryCount >= MAX_SUBCATEGORIES) {
+        cout << "Nie mozna dodac wiecej podkategorii.\n";
+        return;
+    }
+    Category* sub = new Category();
+    cout << "Nazwa podkategorii: "; getline(cin, sub->name);
+    cat->subcategories[cat->subcategoryCount++] = sub;
 }
 
-// 🔽 NOWA FUNKCJA do wybierania dowolnej kategorii/podkategorii z drzewa
-Category* selectCategoryFromTree(vector<Category>& categories) {
-    vector<pair<string, Category*>> flatList;
+// 🔽 NOWA FUNKCJA do wybierania dowolnej kategorii/podkategorii z drzewa (używa tablicy wskaźników)
+struct FlatCategory {
+    string path;
+    Category* cat;
+};
 
-    function<void(Category&, string)> flatten = [&](Category& cat, string path) {
-        string currentPath = path.empty() ? cat.name : path + " > " + cat.name;
-        flatList.emplace_back(currentPath, &cat);
-        for (auto &sub : cat.subcategories) {
-            flatten(sub, currentPath);
-        }
-    };
+FlatCategory flatList[1000];
+int flatListCount = 0;
 
-    for (auto &cat : categories) {
-        flatten(cat, "");
+void flattenCategories(Category* cat, const string &path) {
+    string currentPath = path.empty() ? cat->name : path + " > " + cat->name;
+    flatList[flatListCount++] = {currentPath, cat};
+    for (int i = 0; i < cat->subcategoryCount; ++i) {
+        flattenCategories(cat->subcategories[i], currentPath);
+    }
+}
+
+Category* selectCategoryFromTree() {
+    flatListCount = 0;
+    for (int i = 0; i < categoryCount; ++i) {
+        flattenCategories(categories[i], "");
     }
 
-    if (flatList.empty()) {
+    if (flatListCount == 0) {
         cout << "Brak kategorii.\n";
         return nullptr;
     }
 
     cout << "Dostepne kategorie:\n";
-    for (size_t i = 0; i < flatList.size(); ++i) {
-        cout << i + 1 << ". " << flatList[i].first << '\n';
+    for (int i = 0; i < flatListCount; ++i) {
+        cout << i + 1 << ". " << flatList[i].path << '\n';
     }
 
     cout << "Wybierz numer kategorii: ";
@@ -137,64 +212,21 @@ Category* selectCategoryFromTree(vector<Category>& categories) {
     getline(cin, input);
     int index = stoi(input);
 
-    if (index < 1 || index > (int)flatList.size()) {
+    if (index < 1 || index > flatListCount) {
         cout << "Nieprawidlowy wybor.\n";
         return nullptr;
     }
 
-    return flatList[index - 1].second;
+    return flatList[index - 1].cat;
 }
 
-void editMenu(vector<Category> &categories);
-void deleteMenu(vector<Category> &categories);
-
-void menu(vector<Category> &categories) {
-    while (true) {
-        cout << "\nMENU:\n";
-        cout << "1. Wyswietl katalog\n";
-        cout << "2. Dodaj kategorie\n";
-        cout << "3. Dodaj podkategorie\n";
-        cout << "4. Dodaj ksiazke\n";
-        cout << "5. Zapisz i wyjdz\n";
-        cout << "6. Edytuj katalog\n";
-        cout << "7. Usun z katalogu\n";
-        cout << "Wybor: ";
-        string choice;
-        getline(cin, choice);
-
-        if (choice == "1") {
-            for (const auto &cat : categories) printCategory(cat);
-        } else if (choice == "2") {
-            Category cat;
-            cout << "Nazwa kategorii: "; getline(cin, cat.name);
-            categories.push_back(cat);
-        } else if (choice == "3") {
-            Category* cat = selectCategoryFromTree(categories);
-            if (cat) addSubcategory(*cat);
-        } else if (choice == "4") {
-            Category* cat = selectCategoryFromTree(categories);
-            if (cat) addBookToCategory(*cat);
-        } else if (choice == "5") {
-            saveToFile(categories);
-            cout << "Zapisano katalog. Do zobaczenia!\n";
-            break;
-        } else if (choice == "6") {
-            editMenu(categories);
-        } else if (choice == "7") {
-            deleteMenu(categories);
-        } else {
-            cout << "Nieznana opcja.\n";
-        }
-    }
-}
-
-void editCategory(Category &cat) {
-    cout << "Aktualna nazwa: " << cat.name << endl;
+void editCategory(Category* cat) {
+    cout << "Aktualna nazwa: " << cat->name << endl;
     cout << "Nowa nazwa: ";
     string newName;
     getline(cin, newName);
     if (!newName.empty()) {
-        cat.name = newName;
+        cat->name = newName;
     }
 }
 
@@ -214,8 +246,8 @@ void editBook(Book &book) {
     if (!t.empty()) book.isbn = t;
 }
 
-void editMenu(vector<Category> &categories) {
-    Category* cat = selectCategoryFromTree(categories);
+void editMenu() {
+    Category* cat = selectCategoryFromTree();
     if (!cat) return;
 
     cout << "1. Edytuj nazwe kategorii\n";
@@ -225,14 +257,14 @@ void editMenu(vector<Category> &categories) {
     getline(cin, choice);
 
     if (choice == "1") {
-        editCategory(*cat);
+        editCategory(cat);
     } else if (choice == "2") {
-        if (cat->books.empty()) {
+        if (cat->bookCount == 0) {
             cout << "Brak ksiazek w tej kategorii.\n";
             return;
         }
 
-        for (size_t i = 0; i < cat->books.size(); ++i) {
+        for (int i = 0; i < cat->bookCount; ++i) {
             cout << i + 1 << ". " << cat->books[i].title << " by " << cat->books[i].author << " (ISBN: " << cat->books[i].isbn << ")\n";
         }
 
@@ -241,7 +273,7 @@ void editMenu(vector<Category> &categories) {
         getline(cin, input);
         int idx = stoi(input);
 
-        if (idx < 1 || idx > (int)cat->books.size()) {
+        if (idx < 1 || idx > cat->bookCount) {
             cout << "Nieprawidlowy wybor.\n";
             return;
         }
@@ -250,7 +282,32 @@ void editMenu(vector<Category> &categories) {
     }
 }
 
-void deleteMenu(vector<Category> &categories) {
+bool removeCategory(Category** cats, int &count, Category* target) {
+    for (int i = 0; i < count; ++i) {
+        if (cats[i] == target) {
+            // Usuwamy rekurencyjnie podkategorie
+            function<void(Category*)> freeCategory = [&](Category* cat) {
+                for (int j = 0; j < cat->subcategoryCount; ++j) {
+                    freeCategory(cat->subcategories[j]);
+                }
+                delete cat;
+            };
+            freeCategory(cats[i]);
+
+            // przesuwamy elementy tablicy w lewo
+            for (int j = i; j < count - 1; ++j) {
+                cats[j] = cats[j + 1];
+            }
+            count--;
+            return true;
+        } else if (removeCategory(cats[i]->subcategories, cats[i]->subcategoryCount, target)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void deleteMenu() {
     cout << "1. Usun cala kategorie/podkategorie\n";
     cout << "2. Usun ksiazke z kategorii\n";
     cout << "Wybor: ";
@@ -258,35 +315,23 @@ void deleteMenu(vector<Category> &categories) {
     getline(cin, choice);
 
     if (choice == "1") {
-        Category* target = selectCategoryFromTree(categories);
+        Category* target = selectCategoryFromTree();
         if (!target) return;
 
-        function<bool(vector<Category>&)> removeCategory = [&](vector<Category>& cats) -> bool {
-            for (auto it = cats.begin(); it != cats.end(); ++it) {
-                if (&(*it) == target) {
-                    cats.erase(it);
-                    return true;
-                } else if (removeCategory(it->subcategories)) {
-                    return true;
-                }
-            }
-            return false;
-        };
-
-        if (removeCategory(categories)) {
+        if (removeCategory(categories, categoryCount, target)) {
             cout << "Kategoria usunieta.\n";
         } else {
             cout << "Nie udalo sie usunac.\n";
         }
 
     } else if (choice == "2") {
-        Category* cat = selectCategoryFromTree(categories);
-        if (!cat || cat->books.empty()) {
+        Category* cat = selectCategoryFromTree();
+        if (!cat || cat->bookCount == 0) {
             cout << "Brak ksiazek.\n";
             return;
         }
 
-        for (size_t i = 0; i < cat->books.size(); ++i) {
+        for (int i = 0; i < cat->bookCount; ++i) {
             cout << i + 1 << ". " << cat->books[i].title << " by " << cat->books[i].author << " (ISBN: " << cat->books[i].isbn << ")\n";
         }
 
@@ -295,20 +340,80 @@ void deleteMenu(vector<Category> &categories) {
         getline(cin, input);
         int idx = stoi(input);
 
-        if (idx < 1 || idx > (int)cat->books.size()) {
+        if (idx < 1 || idx > cat->bookCount) {
             cout << "Nieprawidlowy wybor.\n";
             return;
         }
 
-        cat->books.erase(cat->books.begin() + idx - 1);
+        for (int i = idx - 1; i < cat->bookCount - 1; ++i) {
+            cat->books[i] = cat->books[i + 1];
+        }
+        cat->bookCount--;
         cout << "Ksiazka usunieta.\n";
     }
 }
 
+void menu() {
+    while (true) {
+        cout << "\nMENU:\n";
+        cout << "1. Wyswietl katalog\n";
+        cout << "2. Dodaj kategorie\n";
+        cout << "3. Dodaj podkategorie\n";
+        cout << "4. Dodaj ksiazke\n";
+        cout << "5. Zapisz i wyjdz\n";
+        cout << "6. Edytuj katalog\n";
+        cout << "7. Usun z katalogu\n";
+        cout << "Wybor: ";
+        string choice;
+        getline(cin, choice);
+
+        if (choice == "1") {
+            for (int i = 0; i < categoryCount; ++i) {
+                printCategory(categories[i]);
+            }
+        } else if (choice == "2") {
+            if (categoryCount >= MAX_CATEGORIES) {
+                cout << "Nie mozna dodac wiecej kategorii.\n";
+                continue;
+            }
+            Category* cat = new Category();
+            cout << "Nazwa kategorii: ";
+            getline(cin, cat->name);
+            categories[categoryCount++] = cat;
+        } else if (choice == "3") {
+            Category* cat = selectCategoryFromTree();
+            if (cat) addSubcategory(cat);
+        } else if (choice == "4") {
+            Category* cat = selectCategoryFromTree();
+            if (cat) addBookToCategory(cat);
+        } else if (choice == "5") {
+            saveToFile();
+            cout << "Zapisano katalog. Do zobaczenia!\n";
+            break;
+        } else if (choice == "6") {
+            editMenu();
+        } else if (choice == "7") {
+            deleteMenu();
+        } else {
+            cout << "Nieznana opcja.\n";
+        }
+    }
+}
 
 int main() {
-    vector<Category> categories;
-    loadFromFile(categories);
-    menu(categories);
+    loadFromFile();
+    menu();
+
+    // zwalniamy pamięć przy wyjściu
+    for (int i = 0; i < categoryCount; ++i) {
+        function<void(Category*)> freeCategory = [&](Category* cat) {
+            for (int j = 0; j < cat->subcategoryCount; ++j) {
+                freeCategory(cat->subcategories[j]);
+            }
+            delete cat;
+        };
+        freeCategory(categories[i]);
+    }
+
     return 0;
 }
