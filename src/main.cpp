@@ -4,6 +4,7 @@
 #include <sstream>
 #include <algorithm>
 #include <functional>
+
 using namespace std;
 
 const int MAX_BOOKS = 100;
@@ -64,7 +65,7 @@ bool parseBook(const string &line, Book &book) {
     getline(ss, book.title, '|');
     getline(ss, book.author, '|');
     getline(ss, book.isbn);
-    // trim spaces from left and right of title, author, isbn
+
     auto trim = [](string &s) {
         s.erase(s.begin(), find_if(s.begin(), s.end(), [](unsigned char ch){ return !isspace(ch); }));
         s.erase(find_if(s.rbegin(), s.rend(), [](unsigned char ch){ return !isspace(ch); }).base(), s.end());
@@ -75,19 +76,15 @@ bool parseBook(const string &line, Book &book) {
     return true;
 }
 
-// Funkcja do wczytywania z pliku - tworzymy hierarchię kategorii dynamicznie
 void loadFromFile() {
     ifstream file("katalog.txt");
-    if (!file) return;  // plik nie istnieje, startujemy z pustą listą
+    if (!file) return;
 
     string line;
     Category* stack[100];
     int stackDepth = 0;
 
-    // Najpierw usuwamy stare kategorie, jeśli jakieś były
     for (int i = 0; i < categoryCount; ++i) {
-        // zwalniamy pamięć dynamicznie alokowanych kategorii (wczytanych poniżej)
-        // zrobimy prostą rekurencję na zwalnianie pamięci:
         function<void(Category*)> freeCategory = [&](Category* cat) {
             for (int j = 0; j < cat->subcategoryCount; ++j) {
                 freeCategory(cat->subcategories[j]);
@@ -109,7 +106,7 @@ void loadFromFile() {
             Category* cat = new Category();
             cat->name = catName;
 
-            int level = depth / 2;  // 2 spacje na poziom
+            int level = depth / 2;
             if (level == 0) {
                 categories[categoryCount++] = cat;
                 stackDepth = 1;
@@ -174,55 +171,9 @@ void addSubcategory(Category* cat) {
     cat->subcategories[cat->subcategoryCount++] = sub;
 }
 
-// 🔽 NOWA FUNKCJA do wybierania dowolnej kategorii/podkategorii z drzewa (używa tablicy wskaźników)
-struct FlatCategory {
-    string path;
-    Category* cat;
-};
-
-FlatCategory flatList[1000];
-int flatListCount = 0;
-
-void flattenCategories(Category* cat, const string &path) {
-    string currentPath = path.empty() ? cat->name : path + " > " + cat->name;
-    flatList[flatListCount++] = {currentPath, cat};
-    for (int i = 0; i < cat->subcategoryCount; ++i) {
-        flattenCategories(cat->subcategories[i], currentPath);
-    }
-}
-
-Category* selectCategoryFromTree() {
-    flatListCount = 0;
-    for (int i = 0; i < categoryCount; ++i) {
-        flattenCategories(categories[i], "");
-    }
-
-    if (flatListCount == 0) {
-        cout << "Brak kategorii.\n";
-        return nullptr;
-    }
-
-    cout << "Dostepne kategorie:\n";
-    for (int i = 0; i < flatListCount; ++i) {
-        cout << i + 1 << ". " << flatList[i].path << '\n';
-    }
-
-    cout << "Wybierz numer kategorii: ";
-    string input;
-    getline(cin, input);
-    int index = stoi(input);
-
-    if (index < 1 || index > flatListCount) {
-        cout << "Nieprawidlowy wybor.\n";
-        return nullptr;
-    }
-
-    return flatList[index - 1].cat;
-}
-
 void editCategory(Category* cat) {
     cout << "Aktualna nazwa: " << cat->name << endl;
-    cout << "Nowa nazwa: ";
+    cout << "Nowa nazwa (ENTER aby nie zmieniac): ";
     string newName;
     getline(cin, newName);
     if (!newName.empty()) {
@@ -232,60 +183,24 @@ void editCategory(Category* cat) {
 
 void editBook(Book &book) {
     cout << "Edytujesz ksiazke: " << book.title << " by " << book.author << " (ISBN: " << book.isbn << ")\n";
-    cout << "Nowy tytul (lub ENTER, aby nie zmieniac): ";
+    cout << "Nowy tytul (ENTER aby nie zmieniac): ";
     string t;
     getline(cin, t);
     if (!t.empty()) book.title = t;
 
-    cout << "Nowy autor (lub ENTER): ";
+    cout << "Nowy autor (ENTER aby nie zmieniac): ";
     getline(cin, t);
     if (!t.empty()) book.author = t;
 
-    cout << "Nowy ISBN (lub ENTER): ";
+    cout << "Nowy ISBN (ENTER aby nie zmieniac): ";
     getline(cin, t);
     if (!t.empty()) book.isbn = t;
-}
-
-void editMenu() {
-    Category* cat = selectCategoryFromTree();
-    if (!cat) return;
-
-    cout << "1. Edytuj nazwe kategorii\n";
-    cout << "2. Edytuj ksiazke\n";
-    cout << "Wybor: ";
-    string choice;
-    getline(cin, choice);
-
-    if (choice == "1") {
-        editCategory(cat);
-    } else if (choice == "2") {
-        if (cat->bookCount == 0) {
-            cout << "Brak ksiazek w tej kategorii.\n";
-            return;
-        }
-
-        for (int i = 0; i < cat->bookCount; ++i) {
-            cout << i + 1 << ". " << cat->books[i].title << " by " << cat->books[i].author << " (ISBN: " << cat->books[i].isbn << ")\n";
-        }
-
-        cout << "Wybierz numer ksiazki do edycji: ";
-        string input;
-        getline(cin, input);
-        int idx = stoi(input);
-
-        if (idx < 1 || idx > cat->bookCount) {
-            cout << "Nieprawidlowy wybor.\n";
-            return;
-        }
-
-        editBook(cat->books[idx - 1]);
-    }
 }
 
 bool removeCategory(Category** cats, int &count, Category* target) {
     for (int i = 0; i < count; ++i) {
         if (cats[i] == target) {
-            // Usuwamy rekurencyjnie podkategorie
+            // Rekurencyjne usuwanie podkategorii i zwolnienie pamieci
             function<void(Category*)> freeCategory = [&](Category* cat) {
                 for (int j = 0; j < cat->subcategoryCount; ++j) {
                     freeCategory(cat->subcategories[j]);
@@ -294,7 +209,6 @@ bool removeCategory(Category** cats, int &count, Category* target) {
             };
             freeCategory(cats[i]);
 
-            // przesuwamy elementy tablicy w lewo
             for (int j = i; j < count - 1; ++j) {
                 cats[j] = cats[j + 1];
             }
@@ -307,94 +221,274 @@ bool removeCategory(Category** cats, int &count, Category* target) {
     return false;
 }
 
-void deleteMenu() {
-    cout << "1. Usun cala kategorie/podkategorie\n";
-    cout << "2. Usun ksiazke z kategorii\n";
-    cout << "Wybor: ";
-    string choice;
-    getline(cin, choice);
+void removeBookFromCategory(Category* cat, int index) {
+    for (int i = index; i < cat->bookCount - 1; ++i) {
+        cat->books[i] = cat->books[i + 1];
+    }
+    cat->bookCount--;
+}
 
-    if (choice == "1") {
-        Category* target = selectCategoryFromTree();
-        if (!target) return;
+struct NavigationStackItem {
+    Category* cat;
+    Category* parent;
+};
 
-        if (removeCategory(categories, categoryCount, target)) {
-            cout << "Kategoria usunieta.\n";
+Category* navigateCategory(Category* root = nullptr) {
+    // Drzewo nawigacji: w kazdym kroku wiemy parenta (nullptr dla korzenia)
+    NavigationStackItem stack[100];
+    int depth = 0;
+
+    if (root == nullptr) {
+        // Startujemy od glownej listy kategorii
+        stack[0] = { nullptr, nullptr }; // brak wybranej kategorii, parent null
+    } else {
+        stack[0] = { root, nullptr };
+    }
+    depth = 1;
+
+    while (depth > 0) {
+        Category* current = stack[depth - 1].cat;
+        Category* parent = stack[depth - 2 >= 0 ? depth - 2 : 0].cat;
+
+        cout << "\nAktualna kategoria: " << (current ? current->name : "Glowna lista kategorii") << "\n";
+
+        Category** list;
+        int count;
+        if (current == nullptr) {
+            list = categories;
+            count = categoryCount;
         } else {
-            cout << "Nie udalo sie usunac.\n";
+            list = current->subcategories;
+            count = current->subcategoryCount;
         }
 
-    } else if (choice == "2") {
-        Category* cat = selectCategoryFromTree();
-        if (!cat || cat->bookCount == 0) {
-            cout << "Brak ksiazek.\n";
-            return;
+        if (count == 0) {
+            cout << "Brak podkategorii.\n";
+        } else {
+            cout << "Podkategorie:\n";
+            for (int i = 0; i < count; ++i) {
+                cout << " " << (i + 1) << ". " << list[i]->name << "\n";
+            }
         }
 
-        for (int i = 0; i < cat->bookCount; ++i) {
-            cout << i + 1 << ". " << cat->books[i].title << " by " << cat->books[i].author << " (ISBN: " << cat->books[i].isbn << ")\n";
-        }
+        cout << "Opcje:\n";
+        cout << " 0. Dodaj podkategorie tutaj\n";
+        cout << "-1. Wstecz\n";
+        cout << " e. Edytuj kategorie\n";
+        cout << " u. Usun kategorie\n";
+        cout << "Wybierz numer podkategorii lub opcje: ";
 
-        cout << "Wybierz numer ksiazki do usuniecia: ";
         string input;
         getline(cin, input);
-        int idx = stoi(input);
 
-        if (idx < 1 || idx > cat->bookCount) {
-            cout << "Nieprawidlowy wybor.\n";
+        if (input == "0") {
+            if (current == nullptr) {
+                // Dodaj kategorie do glownej listy
+                if (categoryCount >= MAX_CATEGORIES) {
+                    cout << "Nie mozna dodac wiecej kategorii.\n";
+                    continue;
+                }
+                Category* cat = new Category();
+                cout << "Nazwa nowej kategorii: ";
+                getline(cin, cat->name);
+                categories[categoryCount++] = cat;
+            } else {
+                addSubcategory(current);
+            }
+        }
+        else if (input == "-1") {
+            if (depth == 1) {
+                // Na najwyzszym poziomie wychodzimy
+                return nullptr;
+            }
+            depth--;
+        }
+        else if (input == "e" || input == "E") {
+            if (count == 0) {
+                cout << "Brak podkategorii do edycji.\n";
+                continue;
+            }
+            cout << "Wybierz numer podkategorii do edycji: ";
+            string idxStr;
+            getline(cin, idxStr);
+            int idx = stoi(idxStr);
+            if (idx < 1 || idx > count) {
+                cout << "Nieprawidlowy wybor.\n";
+                continue;
+            }
+            editCategory(list[idx - 1]);
+        }
+        else if (input == "u" || input == "U") {
+            if (count == 0) {
+                cout << "Brak podkategorii do usuniecia.\n";
+                continue;
+            }
+            cout << "Wybierz numer podkategorii do usuniecia: ";
+            string idxStr;
+            getline(cin, idxStr);
+            int idx = stoi(idxStr);
+            if (idx < 1 || idx > count) {
+                cout << "Nieprawidlowy wybor.\n";
+                continue;
+            }
+            if (removeCategory(list, count, list[idx - 1])) {
+                cout << "Kategoria usunieta.\n";
+            } else {
+                cout << "Nie udalo sie usunac kategorii.\n";
+            }
+        }
+        else {
+            // Sprawdzmy czy to numer podkategorii
+            int num = 0;
+            try {
+                num = stoi(input);
+            } catch (...) {
+                cout << "Nieznana opcja.\n";
+                continue;
+            }
+            if (num < 1 || num > count) {
+                cout << "Nieprawidlowy numer.\n";
+                continue;
+            }
+            // Wchodzimy do wybranej podkategorii
+            stack[depth++] = { list[num - 1], current };
+        }
+    }
+    return nullptr; // nigdy tu nie dotrzemy
+}
+
+void bookMenu(Category* cat) {
+    if (cat == nullptr) return;
+
+    while (true) {
+        cout << "\nKategoria: " << cat->name << "\n";
+        if (cat->bookCount == 0) {
+            cout << "Brak ksiazek w tej kategorii.\n";
+        } else {
+            cout << "Ksiazki:\n";
+            for (int i = 0; i < cat->bookCount; ++i) {
+                cout << " " << (i + 1) << ". " << cat->books[i].title << " by " << cat->books[i].author << " (ISBN: " << cat->books[i].isbn << ")\n";
+            }
+        }
+
+        cout << "Opcje:\n";
+        cout << " 0. Dodaj ksiazke\n";
+        cout << "-1. Powrot\n";
+        cout << " e. Edytuj ksiazke\n";
+        cout << " u. Usun ksiazke\n";
+        cout << "Wybierz opcje lub numer ksiazki: ";
+
+        string input;
+        getline(cin, input);
+
+        if (input == "0") {
+            addBookToCategory(cat);
+        }
+        else if (input == "-1") {
             return;
         }
-
-        for (int i = idx - 1; i < cat->bookCount - 1; ++i) {
-            cat->books[i] = cat->books[i + 1];
+        else if (input == "e" || input == "E") {
+            if (cat->bookCount == 0) {
+                cout << "Brak ksiazek do edycji.\n";
+                continue;
+            }
+            cout << "Wybierz numer ksiazki do edycji: ";
+            string idxStr;
+            getline(cin, idxStr);
+            int idx = stoi(idxStr);
+            if (idx < 1 || idx > cat->bookCount) {
+                cout << "Nieprawidlowy wybor.\n";
+                continue;
+            }
+            editBook(cat->books[idx - 1]);
         }
-        cat->bookCount--;
-        cout << "Ksiazka usunieta.\n";
+        else if (input == "u" || input == "U") {
+            if (cat->bookCount == 0) {
+                cout << "Brak ksiazek do usuniecia.\n";
+                continue;
+            }
+            cout << "Wybierz numer ksiazki do usuniecia: ";
+            string idxStr;
+            getline(cin, idxStr);
+            int idx = stoi(idxStr);
+            if (idx < 1 || idx > cat->bookCount) {
+                cout << "Nieprawidlowy wybor.\n";
+                continue;
+            }
+            removeBookFromCategory(cat, idx - 1);
+            cout << "Ksiazka usunieta.\n";
+        }
+        else {
+            // Sprawdzamy czy numer ksiazki
+            int num = 0;
+            try {
+                num = stoi(input);
+            } catch (...) {
+                cout << "Nieznana opcja.\n";
+                continue;
+            }
+            if (num < 1 || num > cat->bookCount) {
+                cout << "Nieprawidlowy numer.\n";
+                continue;
+            }
+            // Pokaz szczegoly ksiazki
+            Book& b = cat->books[num - 1];
+            cout << "Tytul: " << b.title << "\nAutor: " << b.author << "\nISBN: " << b.isbn << "\n";
+        }
     }
 }
 
-void menu() {
+void mainMenu() {
     while (true) {
-        cout << "\nMENU:\n";
-        cout << "1. Wyswietl katalog\n";
+        cout << "\n--- MENU GLOWNE ---\n";
+        cout << "1. Przegladaj kategorie\n";
         cout << "2. Dodaj kategorie\n";
-        cout << "3. Dodaj podkategorie\n";
-        cout << "4. Dodaj ksiazke\n";
-        cout << "5. Zapisz i wyjdz\n";
-        cout << "6. Edytuj katalog\n";
-        cout << "7. Usun z katalogu\n";
-        cout << "Wybor: ";
-        string choice;
-        getline(cin, choice);
+        cout << "3. Wyswietl wszystkie kategorie i ksiazki\n";
+        cout << "4. Zapisz do pliku\n";
+        cout << "5. Wczytaj z pliku\n";
+        cout << "0. Wyjdz\n";
+        cout << "Wybierz opcje: ";
 
-        if (choice == "1") {
-            for (int i = 0; i < categoryCount; ++i) {
-                printCategory(categories[i]);
+        string input;
+        getline(cin, input);
+
+        if (input == "1") {
+            Category* cat = navigateCategory(nullptr);
+            if (cat != nullptr) {
+                bookMenu(cat);
             }
-        } else if (choice == "2") {
+        }
+        else if (input == "2") {
             if (categoryCount >= MAX_CATEGORIES) {
                 cout << "Nie mozna dodac wiecej kategorii.\n";
                 continue;
             }
             Category* cat = new Category();
-            cout << "Nazwa kategorii: ";
+            cout << "Nazwa nowej kategorii: ";
             getline(cin, cat->name);
             categories[categoryCount++] = cat;
-        } else if (choice == "3") {
-            Category* cat = selectCategoryFromTree();
-            if (cat) addSubcategory(cat);
-        } else if (choice == "4") {
-            Category* cat = selectCategoryFromTree();
-            if (cat) addBookToCategory(cat);
-        } else if (choice == "5") {
+        }
+        else if (input == "3") {
+            if (categoryCount == 0) {
+                cout << "Brak kategorii.\n";
+            }
+            for (int i = 0; i < categoryCount; ++i) {
+                printCategory(categories[i]);
+            }
+        }
+        else if (input == "4") {
             saveToFile();
-            cout << "Zapisano katalog. Do zobaczenia!\n";
+            cout << "Zapisano do pliku.\n";
+        }
+        else if (input == "5") {
+            loadFromFile();
+            cout << "Wczytano z pliku.\n";
+        }
+        else if (input == "0") {
+            cout << "Koniec programu.\n";
             break;
-        } else if (choice == "6") {
-            editMenu();
-        } else if (choice == "7") {
-            deleteMenu();
-        } else {
+        }
+        else {
             cout << "Nieznana opcja.\n";
         }
     }
@@ -402,9 +496,9 @@ void menu() {
 
 int main() {
     loadFromFile();
-    menu();
+    mainMenu();
 
-    // zwalniamy pamięć przy wyjściu
+    // Zwolnienie pamieci przed wyjsciem
     for (int i = 0; i < categoryCount; ++i) {
         function<void(Category*)> freeCategory = [&](Category* cat) {
             for (int j = 0; j < cat->subcategoryCount; ++j) {
