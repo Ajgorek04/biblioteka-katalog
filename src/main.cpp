@@ -331,11 +331,16 @@ Category* navigateCategory(Category* root = nullptr) {
                 cout << "Nieprawidlowy wybor.\n";
                 continue;
             }
-            if (removeCategory(list, count, list[idx - 1])) {
-                cout << "Kategoria usunieta.\n";
-            } else {
-                cout << "Nie udalo sie usunac kategorii.\n";
-            }
+            if (current == nullptr) {
+    if (removeCategory(categories, categoryCount, list[idx - 1])) {
+        cout << "Kategoria usunieta.\n";
+    }
+} else {
+    if (removeCategory(current->subcategories, current->subcategoryCount, list[idx - 1])) {
+        cout << "Kategoria usunieta.\n";
+    }
+}
+
         }
         else {
             // Sprawdzmy czy to numer podkategorii
