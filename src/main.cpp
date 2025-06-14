@@ -280,9 +280,13 @@ Category* navigateCategory(Category* root = nullptr) {
 
         cout << "Opcje:\n";
         cout << " 0. Dodaj podkategorie tutaj\n";
-        cout << " k. Przejdz do menu ksiazek\n";
+        if (current) {
+            cout << " a. Dodaj ksiazke\n";
+            cout << " e. Edytuj ksiazke\n";
+            cout << " d. Usun ksiazke\n";
+        }
         cout << "-1. Wstecz\n";
-        cout << " e. Edytuj kategorie\n";
+        cout << " m. Edytuj kategorie\n";
         cout << " u. Usun kategorie\n";
         cout << "Wybierz numer podkategorii lub opcje: ";
 
@@ -303,15 +307,45 @@ Category* navigateCategory(Category* root = nullptr) {
                 addSubcategory(current);
             }
         }
-        else if (input == "k" || input == "K") {
-            if (current) bookMenu(current);
-            else cout << "Brak konkretnej kategorii.\n";
+        else if (input == "a" && current) {
+            addBookToCategory(current);
+        }
+        else if (input == "e" && current) {
+            if (current->bookCount == 0) {
+                cout << "Brak ksiazek do edycji.\n";
+                continue;
+            }
+            cout << "Wybierz numer ksiazki do edycji: ";
+            string idxStr;
+            getline(cin, idxStr);
+            int idx = stoi(idxStr);
+            if (idx < 1 || idx > current->bookCount) {
+                cout << "Nieprawidlowy wybor.\n";
+                continue;
+            }
+            editBook(current->books[idx - 1]);
+        }
+        else if (input == "d" && current) {
+            if (current->bookCount == 0) {
+                cout << "Brak ksiazek do usuniecia.\n";
+                continue;
+            }
+            cout << "Wybierz numer ksiazki do usuniecia: ";
+            string idxStr;
+            getline(cin, idxStr);
+            int idx = stoi(idxStr);
+            if (idx < 1 || idx > current->bookCount) {
+                cout << "Nieprawidlowy wybor.\n";
+                continue;
+            }
+            removeBookFromCategory(current, idx - 1);
+            cout << "Ksiazka usunieta.\n";
         }
         else if (input == "-1") {
             if (depth == 1) return nullptr;
             depth--;
         }
-        else if (input == "e" || input == "E") {
+        else if (input == "m" || input == "M") {
             if (count == 0) {
                 cout << "Brak podkategorii do edycji.\n";
                 continue;

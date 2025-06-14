@@ -26,4 +26,5 @@
   [CATEGORY] Manga
     [BOOK] Naruto | MasashiKishimoto | 1999
     [BOOK] OnePiece | EiichiroOda | 1997
+    [BOOK] Ksiazkanowa | tensam | 121
     [CATEGORY] Inne mangi
