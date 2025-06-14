@@ -234,13 +234,11 @@ struct NavigationStackItem {
 };
 
 Category* navigateCategory(Category* root = nullptr) {
-    // Drzewo nawigacji: w kazdym kroku wiemy parenta (nullptr dla korzenia)
     NavigationStackItem stack[100];
     int depth = 0;
 
     if (root == nullptr) {
-        // Startujemy od glownej listy kategorii
-        stack[0] = { nullptr, nullptr }; // brak wybranej kategorii, parent null
+        stack[0] = { nullptr, nullptr };
     } else {
         stack[0] = { root, nullptr };
     }
@@ -271,8 +269,18 @@ Category* navigateCategory(Category* root = nullptr) {
             }
         }
 
+        // Pokaz ksiazki w tej kategorii
+        if (current && current->bookCount > 0) {
+            cout << "Ksiazki:\n";
+            for (int i = 0; i < current->bookCount; ++i) {
+                const Book& b = current->books[i];
+                cout << " * " << (i + 1) << ". " << b.title << " by " << b.author << " (ISBN: " << b.isbn << ")\n";
+            }
+        }
+
         cout << "Opcje:\n";
         cout << " 0. Dodaj podkategorie tutaj\n";
+        cout << " k. Przejdz do menu ksiazek\n";
         cout << "-1. Wstecz\n";
         cout << " e. Edytuj kategorie\n";
         cout << " u. Usun kategorie\n";
@@ -283,7 +291,6 @@ Category* navigateCategory(Category* root = nullptr) {
 
         if (input == "0") {
             if (current == nullptr) {
-                // Dodaj kategorie do glownej listy
                 if (categoryCount >= MAX_CATEGORIES) {
                     cout << "Nie mozna dodac wiecej kategorii.\n";
                     continue;
@@ -296,11 +303,12 @@ Category* navigateCategory(Category* root = nullptr) {
                 addSubcategory(current);
             }
         }
+        else if (input == "k" || input == "K") {
+            if (current) bookMenu(current);
+            else cout << "Brak konkretnej kategorii.\n";
+        }
         else if (input == "-1") {
-            if (depth == 1) {
-                // Na najwyzszym poziomie wychodzimy
-                return nullptr;
-            }
+            if (depth == 1) return nullptr;
             depth--;
         }
         else if (input == "e" || input == "E") {
@@ -332,18 +340,16 @@ Category* navigateCategory(Category* root = nullptr) {
                 continue;
             }
             if (current == nullptr) {
-    if (removeCategory(categories, categoryCount, list[idx - 1])) {
-        cout << "Kategoria usunieta.\n";
-    }
-} else {
-    if (removeCategory(current->subcategories, current->subcategoryCount, list[idx - 1])) {
-        cout << "Kategoria usunieta.\n";
-    }
-}
-
+                if (removeCategory(categories, categoryCount, list[idx - 1])) {
+                    cout << "Kategoria usunieta.\n";
+                }
+            } else {
+                if (removeCategory(current->subcategories, current->subcategoryCount, list[idx - 1])) {
+                    cout << "Kategoria usunieta.\n";
+                }
+            }
         }
         else {
-            // Sprawdzmy czy to numer podkategorii
             int num = 0;
             try {
                 num = stoi(input);
@@ -355,12 +361,12 @@ Category* navigateCategory(Category* root = nullptr) {
                 cout << "Nieprawidlowy numer.\n";
                 continue;
             }
-            // Wchodzimy do wybranej podkategorii
             stack[depth++] = { list[num - 1], current };
         }
     }
-    return nullptr; // nigdy tu nie dotrzemy
+    return nullptr;
 }
+
 
 void bookMenu(Category* cat) {
     if (cat == nullptr) return;

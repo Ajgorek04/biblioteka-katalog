@@ -27,5 +27,3 @@
     [BOOK] Naruto | MasashiKishimoto | 1999
     [BOOK] OnePiece | EiichiroOda | 1997
     [CATEGORY] Inne mangi
-[CATEGORY] Ksiazki
-  [CATEGORY] Jakies Na pewno
